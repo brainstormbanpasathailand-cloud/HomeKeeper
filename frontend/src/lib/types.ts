@@ -61,6 +61,7 @@ export interface Job {
   status: string
   assigned_technician_id: number | null
   address: string | null
+  photos: string[] | null
   created_at: string
 }
 

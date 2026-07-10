@@ -37,7 +37,7 @@ def test_full_job_lifecycle_generates_health_record(client, register, db_session
     job = client.post(
         "/api/v1/jobs",
         headers=auth_header(customer),
-        json={"service_category_id": category_id, "title": "ท่อรั่ว", "urgency": "today"},
+        json={"service_category_id": category_id, "title": "ท่อรั่ว", "urgency": "today", "photos": ["http://img/leak.jpg"]},
     ).json()
     assert job["status"] == "requested"
 
@@ -127,7 +127,7 @@ def test_technician_cannot_start_before_quote_approved(client, register, db_sess
     admin = client.post("/api/v1/auth/login", json={"email": "a2@example.com", "password": "Password123"}).json()["access_token"]
     tech = client.post("/api/v1/auth/login", json={"email": "t2@example.com", "password": "Password123"}).json()["access_token"]
 
-    job = client.post("/api/v1/jobs", headers=auth_header(customer), json={"service_category_id": category_id, "title": "x"}).json()
+    job = client.post("/api/v1/jobs", headers=auth_header(customer), json={"service_category_id": category_id, "title": "x", "photos": ["http://img/x.jpg"]}).json()
     client.post(f"/api/v1/admin/jobs/{job['id']}/assign", headers=auth_header(admin), json={"technician_id": tech_id})
     client.post(f"/api/v1/jobs/{job['id']}/respond", headers=auth_header(tech), json={"accept": True})
     client.post(f"/api/v1/jobs/{job['id']}/status", headers=auth_header(tech), json={"status": "traveling"})
@@ -142,7 +142,22 @@ def test_idempotent_job_creation(client, register, db_session):
     customer = register(email="c3@example.com")
     headers = auth_header(customer)
     headers["Idempotency-Key"] = "abc-123"
-    body = {"service_category_id": category_id, "title": "dup"}
+    body = {"service_category_id": category_id, "title": "dup", "photos": ["http://img/d.jpg"]}
     j1 = client.post("/api/v1/jobs", headers=headers, json=body).json()
     j2 = client.post("/api/v1/jobs", headers=headers, json=body).json()
     assert j1["id"] == j2["id"]
+
+
+def test_job_requires_at_least_one_photo(client, register, db_session):
+    category_id = _seed_category(db_session)
+    customer = register(email="c4@example.com")
+    # No photos → rejected.
+    r = client.post("/api/v1/jobs", headers=auth_header(customer), json={"service_category_id": category_id, "title": "no photo"})
+    assert r.status_code == 422
+    # Eleven photos → rejected (max 10).
+    r2 = client.post(
+        "/api/v1/jobs",
+        headers=auth_header(customer),
+        json={"service_category_id": category_id, "title": "too many", "photos": [f"http://img/{i}.jpg" for i in range(11)]},
+    )
+    assert r2.status_code == 422
