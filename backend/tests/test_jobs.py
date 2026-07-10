@@ -95,6 +95,9 @@ def test_full_job_lifecycle_generates_health_record(client, register, db_session
     assert rec["before_photos"] == ["http://img/before.jpg"]
     assert rec["after_photos"] == ["http://img/after.jpg"]
     assert rec["warranty_end"] is not None
+    # The single quoted part must appear once, not double-counted (a part row
+    # carries both job_id and quotation_id).
+    assert len(rec["parts_used"]) == 1
 
     # Warranty claim.
     claim = client.post(

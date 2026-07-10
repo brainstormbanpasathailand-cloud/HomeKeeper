@@ -109,9 +109,13 @@ def _on_completed(db: Session, job: JobRequest) -> None:
         .order_by(Quotation.version.desc())
         .first()
     )
-    parts = db.query(Part).filter(Part.job_id == job.id).all()
+    # A part may carry both job_id and quotation_id (the quotation route sets
+    # both), so de-duplicate by primary key to avoid double-counting.
+    parts_by_id: dict[int, Part] = {p.id: p for p in db.query(Part).filter(Part.job_id == job.id).all()}
     if quotation:
-        parts = parts + db.query(Part).filter(Part.quotation_id == quotation.id).all()
+        for p in db.query(Part).filter(Part.quotation_id == quotation.id).all():
+            parts_by_id[p.id] = p
+    parts = list(parts_by_id.values())
 
     before = [m.url for m in job.media if m.kind == MediaKind.before.value]
     after = [m.url for m in job.media if m.kind == MediaKind.after.value]
