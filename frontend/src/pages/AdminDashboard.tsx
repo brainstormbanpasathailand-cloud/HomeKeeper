@@ -45,6 +45,9 @@ export default function AdminDashboard() {
       <Link to="/admin/dispatch" className="btn-primary w-full">
         ไปหน้ามอบหมายงาน
       </Link>
+      <Link to="/admin/technicians" className="btn-outline w-full">
+        อนุมัติช่าง
+      </Link>
     </div>
   )
 }

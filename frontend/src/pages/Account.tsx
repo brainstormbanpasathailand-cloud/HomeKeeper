@@ -27,9 +27,15 @@ export default function Account() {
           <span>📗 {t('health_record')}</span>
           <span className="text-gray-300">›</span>
         </Link>
-        {user?.role === 'customer' && (
-          <Link to="/tech-apply" className="card flex items-center justify-between opacity-60">
-            <span>🧰 สมัครเป็นช่าง (เร็ว ๆ นี้)</span>
+        {user?.role !== 'technician' && !['admin', 'super_admin', 'dispatcher', 'support'].includes(user?.role || '') && (
+          <Link to="/tech-apply" className="card flex items-center justify-between">
+            <span>🧰 สมัครเป็นช่าง</span>
+            <span className="text-gray-300">›</span>
+          </Link>
+        )}
+        {user?.role === 'technician' && (
+          <Link to="/tech-apply" className="card flex items-center justify-between">
+            <span>🧰 สถานะช่างของฉัน</span>
             <span className="text-gray-300">›</span>
           </Link>
         )}

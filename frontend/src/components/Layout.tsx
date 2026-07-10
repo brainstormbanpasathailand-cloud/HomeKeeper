@@ -19,6 +19,7 @@ const technicianNav = [
 const adminNav = [
   { to: '/admin', key: 'dashboard', icon: '📊' },
   { to: '/admin/dispatch', key: 'dispatch', icon: '🗂️' },
+  { to: '/admin/technicians', key: 'technician', icon: '🧰' },
   { to: '/account', key: 'account', icon: '👤' },
 ]
 
