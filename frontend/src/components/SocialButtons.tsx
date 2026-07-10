@@ -15,7 +15,7 @@ export function SocialButtons() {
       const resp = await api.get(`/auth/oauth/${provider}/start`)
       window.location.href = resp.data.authorization_url
     } catch {
-      alert(`${provider} login is not configured yet`)
+      alert(t('provider_not_configured'))
     }
   }
 

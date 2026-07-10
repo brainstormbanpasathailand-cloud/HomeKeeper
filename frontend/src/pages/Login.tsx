@@ -21,7 +21,7 @@ export default function Login() {
       await login(email, password)
       navigate('/')
     } catch {
-      setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+      setError(t('invalid_credentials'))
     } finally {
       setBusy(false)
     }
@@ -51,7 +51,7 @@ export default function Login() {
       </form>
 
       <p className="mt-4 text-center text-sm text-gray-500">
-        {t('register')}?{' '}
+        {t('no_account')}{' '}
         <Link to="/register" className="font-semibold text-brand-700">
           {t('register')}
         </Link>

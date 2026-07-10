@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
-import { useI18n } from '@/i18n'
+import { LANGS, useI18n, type Lang } from '@/i18n'
 
 const customerNav = [
   { to: '/', key: 'home', icon: '🏠' },
@@ -42,12 +42,18 @@ export function Layout() {
           Home<span className="text-brand-500">Keeper</span>
         </button>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
-            className="chip bg-gray-100 text-gray-600"
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+            aria-label={t('choose_language')}
+            className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 outline-none"
           >
-            {lang === 'th' ? 'TH' : 'EN'}
-          </button>
+            {LANGS.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
           <button onClick={() => logout()} className="chip bg-gray-100 text-gray-600">
             {t('logout')}
           </button>

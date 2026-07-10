@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { uploadFile } from '@/lib/upload'
+import { useI18n } from '@/i18n'
 
 interface Props {
   label: string
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function FileUploadField({ label, value, onChange, folder = 'homekeeper', required }: Props) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +27,7 @@ export function FileUploadField({ label, value, onChange, folder = 'homekeeper',
       const url = await uploadFile(file, folder)
       onChange(url)
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'อัปโหลดไม่สำเร็จ')
+      setError(err?.response?.data?.detail || t('upload_failed'))
     } finally {
       setBusy(false)
     }
@@ -50,7 +52,7 @@ export function FileUploadField({ label, value, onChange, folder = 'homekeeper',
           <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-gray-100 text-xl">📷</span>
         )}
         <span className="text-sm text-gray-500">
-          {busy ? 'กำลังอัปโหลด…' : value ? 'อัปโหลดแล้ว · แตะเพื่อเปลี่ยน' : 'แตะเพื่อเลือกไฟล์'}
+          {busy ? t('uploading') : value ? t('uploaded_tap_change') : t('tap_select_file')}
         </span>
       </button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

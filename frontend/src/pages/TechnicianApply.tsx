@@ -26,13 +26,6 @@ interface CertForm {
   document_url: string | null
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  submitted: 'ส่งใบสมัครแล้ว กำลังรอแอดมินตรวจสอบ',
-  under_review: 'แอดมินกำลังตรวจสอบเอกสาร',
-  approved: 'ได้รับการอนุมัติแล้ว 🎉 คุณเป็นช่างแล้ว',
-  rejected: 'ใบสมัครไม่ผ่านการอนุมัติ กรุณาติดต่อฝ่ายสนับสนุน',
-}
-
 export default function TechnicianApply() {
   const { t, lang } = useI18n()
   const { user, refreshUser } = useAuth()
@@ -110,7 +103,7 @@ export default function TechnicianApply() {
       await refreshUser()
       qc.invalidateQueries({ queryKey: ['tech-profile'] })
     },
-    onError: (e: any) => setError(e?.response?.data?.detail || 'ส่งใบสมัครไม่สำเร็จ'),
+    onError: (e: any) => setError(e?.response?.data?.detail || t('apply_submit_failed')),
   })
 
   const toggleCategory = (id: number) =>
@@ -121,26 +114,30 @@ export default function TechnicianApply() {
       return next
     })
 
-  if (isLoading) return <p className="text-gray-400">กำลังโหลด…</p>
+  const catLabel = (c?: ServiceCategory) => (c ? (lang === 'th' ? c.name_th : c.name_en || c.name_th) : '')
+
+  if (isLoading) return <p className="text-gray-400">{t('loading')}</p>
 
   if (profile) {
     const approved = profile.verification_status === 'approved'
     return (
       <div className="space-y-4">
-        <h1 className="text-lg font-bold">สมัครเป็นช่าง</h1>
+        <h1 className="text-lg font-bold">{t('apply_technician')}</h1>
         <div className="card space-y-2 text-center">
           <div className="text-3xl">{approved ? '✅' : profile.verification_status === 'rejected' ? '❌' : '⏳'}</div>
-          <p className="font-medium">{STATUS_LABEL[profile.verification_status] || profile.verification_status}</p>
-          <p className="text-xs text-gray-400">ชื่อ: {profile.display_name || profile.legal_name}</p>
+          <p className="font-medium">{t(`status_${profile.verification_status}`)}</p>
+          <p className="text-xs text-gray-400">
+            {t('name_label')}: {profile.display_name || profile.legal_name}
+          </p>
         </div>
         {approved && (
           <button className="btn-primary w-full" onClick={() => navigate('/tech')}>
-            ไปหน้างานของช่าง
+            {t('go_tech_jobs')}
           </button>
         )}
         {!approved && (
           <button className="btn-outline w-full" onClick={() => qc.invalidateQueries({ queryKey: ['tech-profile'] })}>
-            รีเฟรชสถานะ
+            {t('refresh_status')}
           </button>
         )}
       </div>
@@ -149,83 +146,83 @@ export default function TechnicianApply() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-bold">สมัครเป็นช่าง</h1>
-      <p className="text-sm text-gray-500">กรอกข้อมูลและแนบเอกสาร ทีมงานจะตรวจสอบก่อนอนุมัติให้รับงาน</p>
+      <h1 className="text-lg font-bold">{t('apply_technician')}</h1>
+      <p className="text-sm text-gray-500">{t('apply_desc')}</p>
 
       <form
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
           setError('')
-          if (Object.keys(chosen).length === 0) return setError('กรุณาเลือกหมวดงานอย่างน้อย 1 หมวด')
-          if (!docs.identity_document_front) return setError('กรุณาแนบรูปบัตรประชาชน/พาสปอร์ต (ด้านหน้า)')
-          if (!docs.selfie_with_document) return setError('กรุณาแนบรูปถ่ายตัวเองคู่กับเอกสาร')
+          if (Object.keys(chosen).length === 0) return setError(t('choose_one_category'))
+          if (!docs.identity_document_front) return setError(t('attach_id_front'))
+          if (!docs.selfie_with_document) return setError(t('attach_selfie'))
           apply.mutate()
         }}
       >
         {/* Personal */}
         <div className="card space-y-3">
-          <h2 className="text-sm font-bold text-gray-700">ข้อมูลส่วนตัว</h2>
+          <h2 className="text-sm font-bold text-gray-700">{t('personal_info')}</h2>
           <div>
-            <label className="label">ชื่อ-นามสกุลตามบัตร *</label>
+            <label className="label">{t('legal_name')} *</label>
             <input className="input" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} required />
           </div>
           <div>
-            <label className="label">ชื่อที่แสดง</label>
+            <label className="label">{t('display_name')}</label>
             <input className="input" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="label">เลขบัตร/พาสปอร์ต</label>
+              <label className="label">{t('id_or_passport')}</label>
               <input className="input" value={form.national_id_or_passport} onChange={(e) => setForm({ ...form, national_id_or_passport: e.target.value })} />
             </div>
             <div>
-              <label className="label">วันเกิด</label>
+              <label className="label">{t('birthdate')}</label>
               <input className="input" type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
             </div>
           </div>
           <div>
-            <label className="label">เบอร์โทรศัพท์</label>
+            <label className="label">{t('phone')}</label>
             <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="label">จังหวัด</label>
+              <label className="label">{t('province')}</label>
               <input className="input" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
             </div>
             <div>
-              <label className="label">อำเภอ</label>
+              <label className="label">{t('district')}</label>
               <input className="input" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="label">ประสบการณ์ (ปี)</label>
+              <label className="label">{t('experience_years')}</label>
               <input className="input" type="number" min="0" value={form.years_of_experience} onChange={(e) => setForm({ ...form, years_of_experience: e.target.value })} />
             </div>
             <div>
-              <label className="label">รัศมีบริการ (กม.)</label>
+              <label className="label">{t('service_radius')}</label>
               <input className="input" type="number" min="1" value={form.service_radius_km} onChange={(e) => setForm({ ...form, service_radius_km: e.target.value })} />
             </div>
           </div>
           <div>
-            <label className="label">แนะนำตัว</label>
+            <label className="label">{t('introduce_yourself')}</label>
             <textarea className="input" rows={2} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
           </div>
         </div>
 
         {/* Documents */}
         <div className="card space-y-3">
-          <h2 className="text-sm font-bold text-gray-700">เอกสารยืนยันตัวตน</h2>
-          <FileUploadField label="รูปโปรไฟล์" folder="tech/profile" value={docs.profile_photo} onChange={(url) => setDocs({ ...docs, profile_photo: url })} />
-          <FileUploadField label="บัตรประชาชน/พาสปอร์ต (ด้านหน้า)" required folder="tech/id" value={docs.identity_document_front} onChange={(url) => setDocs({ ...docs, identity_document_front: url })} />
-          <FileUploadField label="บัตรประชาชน (ด้านหลัง)" folder="tech/id" value={docs.identity_document_back} onChange={(url) => setDocs({ ...docs, identity_document_back: url })} />
-          <FileUploadField label="รูปถ่ายตัวเองคู่กับเอกสาร" required folder="tech/selfie" value={docs.selfie_with_document} onChange={(url) => setDocs({ ...docs, selfie_with_document: url })} />
+          <h2 className="text-sm font-bold text-gray-700">{t('id_documents')}</h2>
+          <FileUploadField label={t('profile_photo')} folder="tech/profile" value={docs.profile_photo} onChange={(url) => setDocs({ ...docs, profile_photo: url })} />
+          <FileUploadField label={t('id_front')} required folder="tech/id" value={docs.identity_document_front} onChange={(url) => setDocs({ ...docs, identity_document_front: url })} />
+          <FileUploadField label={t('id_back')} folder="tech/id" value={docs.identity_document_back} onChange={(url) => setDocs({ ...docs, identity_document_back: url })} />
+          <FileUploadField label={t('selfie_with_doc')} required folder="tech/selfie" value={docs.selfie_with_document} onChange={(url) => setDocs({ ...docs, selfie_with_document: url })} />
         </div>
 
         {/* Categories */}
         <div className="card space-y-3">
-          <h2 className="text-sm font-bold text-gray-700">หมวดงานที่รับ *</h2>
+          <h2 className="text-sm font-bold text-gray-700">{t('categories_accepted')} *</h2>
           <div className="flex flex-wrap gap-2">
             {(categories || []).map((c) => (
               <button
@@ -234,7 +231,7 @@ export default function TechnicianApply() {
                 onClick={() => toggleCategory(c.id)}
                 className={`chip border ${chosen[c.id] ? 'border-brand-600 bg-brand-100 text-brand-700' : 'border-gray-200 bg-white text-gray-500'}`}
               >
-                {lang === 'th' ? c.name_th : c.name_en || c.name_th}
+                {catLabel(c)}
               </button>
             ))}
           </div>
@@ -245,13 +242,13 @@ export default function TechnicianApply() {
                 const c = (categories || []).find((x) => x.id === id)
                 return (
                   <div key={id} className="rounded-xl bg-gray-50 p-2">
-                    <div className="mb-1 text-xs font-medium text-gray-600">{c ? (lang === 'th' ? c.name_th : c.name_en) : id}</div>
+                    <div className="mb-1 text-xs font-medium text-gray-600">{catLabel(c)}</div>
                     <div className="flex items-center gap-2">
                       <input
                         className="input flex-1"
                         type="number"
                         min="0"
-                        placeholder="ค่าเรียกขั้นต่ำ (บาท)"
+                        placeholder={t('min_call_fee_ph')}
                         value={chosen[id].min_call_fee}
                         onChange={(e) => setChosen({ ...chosen, [id]: { ...chosen[id], min_call_fee: e.target.value } })}
                       />
@@ -261,7 +258,7 @@ export default function TechnicianApply() {
                           checked={chosen[id].accepts_emergency}
                           onChange={(e) => setChosen({ ...chosen, [id]: { ...chosen[id], accepts_emergency: e.target.checked } })}
                         />
-                        รับด่วน
+                        {t('accepts_urgent_short')}
                       </label>
                     </div>
                   </div>
@@ -274,21 +271,21 @@ export default function TechnicianApply() {
         {/* Certificates */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-700">ใบรับรอง/ใบเซอร์ (ถ้ามี)</h2>
+            <h2 className="text-sm font-bold text-gray-700">{t('certificates_optional')}</h2>
             <button type="button" className="text-xs font-semibold text-brand-700" onClick={() => setCerts([...certs, { certificate_type: '', issuer: '', certificate_number: '', document_url: null }])}>
-              + เพิ่ม
+              + {t('add')}
             </button>
           </div>
           {certs.map((cert, i) => (
             <div key={i} className="space-y-2 rounded-xl bg-gray-50 p-2">
-              <input className="input" placeholder="ประเภทใบรับรอง เช่น ช่างไฟฟ้าภายในอาคาร" value={cert.certificate_type} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_type: e.target.value } : c)))} />
+              <input className="input" placeholder={t('cert_type_ph')} value={cert.certificate_type} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_type: e.target.value } : c)))} />
               <div className="grid grid-cols-2 gap-2">
-                <input className="input" placeholder="ผู้ออก" value={cert.issuer} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, issuer: e.target.value } : c)))} />
-                <input className="input" placeholder="เลขที่" value={cert.certificate_number} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_number: e.target.value } : c)))} />
+                <input className="input" placeholder={t('issuer')} value={cert.issuer} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, issuer: e.target.value } : c)))} />
+                <input className="input" placeholder={t('cert_number')} value={cert.certificate_number} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_number: e.target.value } : c)))} />
               </div>
-              <FileUploadField label="ไฟล์ใบรับรอง" folder="tech/cert" value={cert.document_url} onChange={(url) => setCerts(certs.map((c, j) => (j === i ? { ...c, document_url: url } : c)))} />
+              <FileUploadField label={t('cert_file')} folder="tech/cert" value={cert.document_url} onChange={(url) => setCerts(certs.map((c, j) => (j === i ? { ...c, document_url: url } : c)))} />
               <button type="button" className="text-xs text-red-600" onClick={() => setCerts(certs.filter((_, j) => j !== i))}>
-                ลบใบรับรองนี้
+                {t('remove_cert')}
               </button>
             </div>
           ))}
@@ -296,7 +293,7 @@ export default function TechnicianApply() {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button className="btn-primary w-full" disabled={apply.isPending}>
-          {apply.isPending ? 'กำลังส่ง…' : t('submit')}
+          {apply.isPending ? t('submitting') : t('submit')}
         </button>
       </form>
     </div>

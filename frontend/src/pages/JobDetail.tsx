@@ -53,7 +53,7 @@ export default function JobDetail() {
     },
   })
 
-  if (!job) return <p className="text-gray-400">กำลังโหลด…</p>
+  if (!job) return <p className="text-gray-400">{t('loading')}</p>
 
   const latestQuote = quotations?.[quotations.length - 1]
 
@@ -75,13 +75,13 @@ export default function JobDetail() {
       {/* Technician assignment response */}
       {isTech && job.status === 'assigned' && (
         <div className="card space-y-2">
-          <p className="text-sm font-medium">คุณได้รับมอบหมายงานนี้</p>
+          <p className="text-sm font-medium">{t('assigned_to_you')}</p>
           <div className="flex gap-2">
             <button className="btn-primary flex-1" onClick={() => respond.mutate(true)}>
-              รับงาน
+              {t('accept_job')}
             </button>
             <button className="btn-outline flex-1" onClick={() => respond.mutate(false)}>
-              ปฏิเสธ
+              {t('decline_job')}
             </button>
           </div>
         </div>
@@ -90,15 +90,15 @@ export default function JobDetail() {
       {/* Technician workflow steps */}
       {isTech && ['accepted', 'traveling', 'arrived', 'inspecting', 'approved', 'in_progress', 'paused'].includes(job.status) && (
         <div className="card space-y-2">
-          <p className="text-sm font-bold text-gray-700">อัปเดตสถานะงาน</p>
+          <p className="text-sm font-bold text-gray-700">{t('update_status')}</p>
           <div className="flex flex-wrap gap-2">
             {TECH_STEPS.map((s) => (
               <button key={s} className="btn-outline text-xs" onClick={() => setStatus.mutate(s)}>
-                {s}
+                {t(`jobstatus_${s}`)}
               </button>
             ))}
           </div>
-          {setStatus.isError && <p className="text-xs text-red-600">ไม่สามารถเปลี่ยนสถานะได้ (ตรวจสอบใบเสนอราคา)</p>}
+          {setStatus.isError && <p className="text-xs text-red-600">{t('cannot_change_status')}</p>}
         </div>
       )}
 
@@ -106,9 +106,9 @@ export default function JobDetail() {
       {isTech && ['inspecting', 'quoted', 'quotation_revision_requested'].includes(job.status) && (
         <div className="card space-y-2">
           <p className="text-sm font-bold text-gray-700">{t('quotation')}</p>
-          <input className="input" placeholder="ค่าแรง (บาท)" value={labor} onChange={(e) => setLabor(e.target.value)} />
+          <input className="input" placeholder={t('labor_cost_ph')} value={labor} onChange={(e) => setLabor(e.target.value)} />
           <button className="btn-primary w-full" onClick={() => createQuote.mutate()} disabled={createQuote.isPending}>
-            ส่งใบเสนอราคา
+            {t('send_quotation')}
           </button>
         </div>
       )}
@@ -120,17 +120,17 @@ export default function JobDetail() {
           {quotations!.map((q) => (
             <div key={q.id} className="rounded-xl border border-gray-100 p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm">เวอร์ชัน {q.version}</span>
+                <span className="text-sm">{t('version')} {q.version}</span>
                 <span className="font-semibold">฿{Number(q.total).toLocaleString()}</span>
               </div>
-              <div className="text-xs text-gray-400">สถานะ: {q.status}</div>
+              <div className="text-xs text-gray-400">{t('status_label')}: {q.status}</div>
               {!isTech && q.status === 'sent' && (
                 <div className="mt-2 flex gap-2">
                   <button className="btn-primary flex-1 text-xs" onClick={() => decide.mutate({ quotation_id: q.id, decision: 'approve' })}>
                     {t('approve')}
                   </button>
                   <button className="btn-outline flex-1 text-xs" onClick={() => decide.mutate({ quotation_id: q.id, decision: 'revision' })}>
-                    ขอแก้ไข
+                    {t('request_revision')}
                   </button>
                   <button className="btn-outline flex-1 text-xs" onClick={() => decide.mutate({ quotation_id: q.id, decision: 'reject' })}>
                     {t('reject')}
@@ -148,13 +148,14 @@ export default function JobDetail() {
       )}
 
       {latestQuote && !isTech && job.status === 'quoted' && (
-        <p className="text-center text-xs text-gray-400">โปรดตรวจสอบและอนุมัติใบเสนอราคาด้านบน</p>
+        <p className="text-center text-xs text-gray-400">{t('review_hint')}</p>
       )}
     </div>
   )
 }
 
 function ReviewForm({ jobId, onDone }: { jobId: number; onDone: () => void }) {
+  const { t } = useI18n()
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
   const [done, setDone] = useState(false)
@@ -165,10 +166,10 @@ function ReviewForm({ jobId, onDone }: { jobId: number; onDone: () => void }) {
       onDone()
     },
   })
-  if (done) return <div className="card text-center text-sm text-green-700">ขอบคุณสำหรับรีวิว</div>
+  if (done) return <div className="card text-center text-sm text-green-700">{t('thanks_review')}</div>
   return (
     <div className="card space-y-2">
-      <p className="text-sm font-bold text-gray-700">ให้คะแนนงาน</p>
+      <p className="text-sm font-bold text-gray-700">{t('rate_job')}</p>
       <div className="flex gap-1 text-2xl">
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} onClick={() => setRating(n)}>
@@ -176,9 +177,9 @@ function ReviewForm({ jobId, onDone }: { jobId: number; onDone: () => void }) {
           </button>
         ))}
       </div>
-      <textarea className="input" rows={2} placeholder="ความคิดเห็น" value={comment} onChange={(e) => setComment(e.target.value)} />
+      <textarea className="input" rows={2} placeholder={t('comment')} value={comment} onChange={(e) => setComment(e.target.value)} />
       <button className="btn-primary w-full" onClick={() => submit.mutate()} disabled={submit.isPending}>
-        ส่งรีวิว
+        {t('send_review')}
       </button>
     </div>
   )

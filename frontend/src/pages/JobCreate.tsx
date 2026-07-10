@@ -5,13 +5,7 @@ import { api } from '@/lib/api'
 import { useI18n } from '@/i18n'
 import type { Property, ServiceCategory } from '@/lib/types'
 
-const URGENCIES = [
-  ['emergency', 'เรียกด่วน'],
-  ['today', 'วันนี้'],
-  ['scheduled', 'นัดหมายล่วงหน้า'],
-  ['quote_first', 'ขอประเมินราคาก่อน'],
-  ['project', 'งานโครงการ/ต่อเติม'],
-]
+const URGENCIES = ['emergency', 'today', 'scheduled', 'quote_first', 'project']
 
 export default function JobCreate() {
   const { t, lang } = useI18n()
@@ -53,7 +47,7 @@ export default function JobCreate() {
       )
       navigate(`/jobs/${resp.data.id}`)
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'สร้างคำขอไม่สำเร็จ')
+      setError(err?.response?.data?.detail || t('create_job_failed'))
     } finally {
       setBusy(false)
     }
@@ -64,9 +58,9 @@ export default function JobCreate() {
       <h1 className="text-lg font-bold">{t('create_job')}</h1>
       <form onSubmit={submit} className="card space-y-3">
         <div>
-          <label className="label">ประเภทบริการ</label>
+          <label className="label">{t('service_type')}</label>
           <select className="input" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
-            <option value="">— เลือก —</option>
+            <option value="">— {t('choose')} —</option>
             {(categories || []).map((c) => (
               <option key={c.id} value={c.id}>
                 {lang === 'th' ? c.name_th : c.name_en || c.name_th}
@@ -75,19 +69,19 @@ export default function JobCreate() {
           </select>
         </div>
         <div>
-          <label className="label">ความเร่งด่วน</label>
+          <label className="label">{t('urgency')}</label>
           <select className="input" value={urgency} onChange={(e) => setUrgency(e.target.value)}>
-            {URGENCIES.map(([v, l]) => (
+            {URGENCIES.map((v) => (
               <option key={v} value={v}>
-                {l}
+                {t(`urgency_${v}`)}
               </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="label">ทรัพย์สิน (ถ้ามี)</label>
+          <label className="label">{t('property_optional')}</label>
           <select className="input" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
-            <option value="">— ไม่ระบุ —</option>
+            <option value="">— {t('not_specified')} —</option>
             {(properties || []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -96,11 +90,11 @@ export default function JobCreate() {
           </select>
         </div>
         <div>
-          <label className="label">หัวข้อ</label>
-          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="เช่น แอร์ไม่เย็น" required />
+          <label className="label">{t('title')}</label>
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('title_ph')} required />
         </div>
         <div>
-          <label className="label">รายละเอียดปัญหา</label>
+          <label className="label">{t('problem_detail')}</label>
           <textarea className="input" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}

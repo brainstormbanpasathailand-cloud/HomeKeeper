@@ -16,6 +16,9 @@ const colors: Record<string, string> = {
   disputed: 'bg-red-100 text-red-700',
 }
 
+import { useI18n } from '@/i18n'
+
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`chip ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>
+  const { t } = useI18n()
+  return <span className={`chip ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{t(`jobstatus_${status}`)}</span>
 }

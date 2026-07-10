@@ -38,11 +38,11 @@ export default function PropertyDetail() {
     <div className="space-y-4">
       <div>
         <h1 className="text-lg font-bold">{property?.name}</h1>
-        <p className="text-xs text-gray-400">{property?.property_type}</p>
+        <p className="text-xs text-gray-400">{property ? t(`ptype_${property.property_type}`) : ''}</p>
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-700">อุปกรณ์ / ทรัพย์สินภายใน</h2>
+        <h2 className="text-sm font-bold text-gray-700">{t('assets_in_property')}</h2>
         <button className="btn-primary" onClick={() => setOpen(true)}>
           + {t('add_asset')}
         </button>
@@ -50,14 +50,14 @@ export default function PropertyDetail() {
 
       {open && (
         <div className="card space-y-2">
-          <input className="input" placeholder="ชื่ออุปกรณ์ (เช่น เครื่องปรับอากาศ)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input className="input" placeholder={t('asset_name_ph')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div className="grid grid-cols-2 gap-2">
-            <input className="input" placeholder="ยี่ห้อ" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
-            <input className="input" placeholder="รุ่น" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+            <input className="input" placeholder={t('brand')} value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
+            <input className="input" placeholder={t('model')} value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
           </div>
-          <input className="input" placeholder="Serial Number" value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} />
+          <input className="input" placeholder={t('serial_number')} value={form.serial_number} onChange={(e) => setForm({ ...form, serial_number: e.target.value })} />
           <div>
-            <label className="label">วันหมดประกัน</label>
+            <label className="label">{t('warranty_end')}</label>
             <input className="input" type="date" value={form.warranty_end} onChange={(e) => setForm({ ...form, warranty_end: e.target.value })} />
           </div>
           <div className="flex gap-2">
@@ -78,10 +78,10 @@ export default function PropertyDetail() {
             <div className="text-xs text-gray-400">
               {[a.brand, a.model, a.serial_number].filter(Boolean).join(' · ')}
             </div>
-            {a.warranty_end && <div className="mt-1 text-xs text-brand-700">ประกันถึง {a.warranty_end}</div>}
+            {a.warranty_end && <div className="mt-1 text-xs text-brand-700">{t('warranty_until')} {a.warranty_end}</div>}
           </div>
         ))}
-        {assets?.length === 0 && <p className="text-sm text-gray-400">ยังไม่มีอุปกรณ์</p>}
+        {assets?.length === 0 && <p className="text-sm text-gray-400">{t('no_assets')}</p>}
       </div>
     </div>
   )

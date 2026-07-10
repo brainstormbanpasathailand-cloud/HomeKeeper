@@ -28,29 +28,29 @@ export default function HealthRecords() {
         <div className="grid grid-cols-2 gap-3">
           <div className="card text-center">
             <div className="text-2xl font-bold text-brand-700">฿{summary.total_spent.toLocaleString()}</div>
-            <div className="text-xs text-gray-400">ค่าใช้จ่ายสะสม</div>
+            <div className="text-xs text-gray-400">{t('total_spent')}</div>
           </div>
           <div className="card text-center">
             <div className="text-2xl font-bold text-brand-700">{summary.records}</div>
-            <div className="text-xs text-gray-400">งานที่บันทึก</div>
+            <div className="text-xs text-gray-400">{t('records_count')}</div>
           </div>
         </div>
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-bold text-gray-700">Timeline การดูแล</h2>
+        <h2 className="mb-2 text-sm font-bold text-gray-700">{t('care_timeline')}</h2>
         <div className="space-y-2">
           {(records || []).map((r) => (
             <div key={r.id} className="card">
               <div className="flex items-center justify-between">
-                <div className="font-medium">{r.issue || 'งานบริการ'}</div>
+                <div className="font-medium">{r.issue || t('service_job')}</div>
                 <div className="text-xs text-gray-400">{r.service_date}</div>
               </div>
               {r.work_performed && <p className="mt-1 text-xs text-gray-500">{r.work_performed}</p>}
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 {r.total_cost != null && <span className="chip bg-gray-100 text-gray-600">฿{Number(r.total_cost).toLocaleString()}</span>}
-                {r.warranty_end && <span className="chip bg-green-100 text-green-700">ประกันถึง {r.warranty_end}</span>}
-                {r.next_maintenance_date && <span className="chip bg-amber-100 text-amber-700">ตรวจครั้งหน้า {r.next_maintenance_date}</span>}
+                {r.warranty_end && <span className="chip bg-green-100 text-green-700">{t('warranty_until')} {r.warranty_end}</span>}
+                {r.next_maintenance_date && <span className="chip bg-amber-100 text-amber-700">{t('next_inspection')} {r.next_maintenance_date}</span>}
               </div>
               {(r.before_photos?.length || r.after_photos?.length) && (
                 <div className="mt-2 flex gap-2 overflow-x-auto">
@@ -61,7 +61,7 @@ export default function HealthRecords() {
               )}
             </div>
           ))}
-          {records?.length === 0 && <p className="text-sm text-gray-400">ยังไม่มีประวัติ เมื่อมีงานเสร็จระบบจะบันทึกอัตโนมัติ</p>}
+          {records?.length === 0 && <p className="text-sm text-gray-400">{t('no_health_records')}</p>}
         </div>
       </section>
     </div>

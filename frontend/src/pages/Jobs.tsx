@@ -27,7 +27,7 @@ export default function Jobs() {
             <StatusBadge status={j.status} />
           </Link>
         ))}
-        {data?.items.length === 0 && <p className="text-sm text-gray-400">ยังไม่มีงาน</p>}
+        {data?.items.length === 0 && <p className="text-sm text-gray-400">{t('no_jobs')}</p>}
       </div>
     </div>
   )

@@ -18,7 +18,7 @@ export default function Register() {
     e.preventDefault()
     setError('')
     if (password.length < 8) {
-      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
+      setError(t('password_min'))
       return
     }
     setBusy(true)
@@ -26,7 +26,7 @@ export default function Register() {
       await register(email, password, name)
       navigate('/onboarding')
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'สมัครไม่สำเร็จ')
+      setError(err?.response?.data?.detail || t('register_failed'))
     } finally {
       setBusy(false)
     }
