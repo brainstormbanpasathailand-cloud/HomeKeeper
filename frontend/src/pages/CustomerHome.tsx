@@ -29,7 +29,7 @@ export default function CustomerHome() {
         className="w-full rounded-2xl bg-gradient-to-r from-brand-600 to-brand-800 p-5 text-left text-white shadow-lg"
       >
         <div className="text-lg font-bold">🚨 {t('call_urgent')}</div>
-        <div className="text-sm text-brand-100">ช่างพร้อมรับงานด่วนใกล้คุณ</div>
+        <div className="text-sm text-brand-100">{t('urgent_sub')}</div>
       </button>
 
       <Link to="/jobs/new" className="input flex items-center text-gray-400">
@@ -58,11 +58,11 @@ export default function CustomerHome() {
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-700">{t('in_progress')}</h2>
           <Link to="/jobs" className="text-xs text-brand-700">
-            ดูทั้งหมด
+            {t('see_all')}
           </Link>
         </div>
         {active.length === 0 ? (
-          <p className="text-sm text-gray-400">ยังไม่มีงานที่กำลังดำเนินการ</p>
+          <p className="text-sm text-gray-400">{t('no_active_jobs')}</p>
         ) : (
           <div className="space-y-2">
             {active.map((j) => (

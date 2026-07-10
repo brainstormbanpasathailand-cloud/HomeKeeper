@@ -107,7 +107,9 @@ It is idempotent and prints the login accounts (all share password
 - [x] Warranty claims, reviews (multi-dimension), notifications
 - [x] Admin dashboard, user management, audit logs
 - [x] Responsive mobile-first UI + PWA (installable, offline shell)
-- [x] Thai / English i18n
+- [x] Four-language i18n — Thai (ไทย), Chinese (中文), English, Russian (Русский);
+      switchable in the header and saved at onboarding. **Convention: every UI
+      change must add all four languages** (see `frontend/src/i18n/index.tsx`).
 
 Deferred to later phases (data model already supports): real-time GPS, AI
 matching, promotions/loyalty, payments/payouts, LINE Messaging / SMS / Web Push.

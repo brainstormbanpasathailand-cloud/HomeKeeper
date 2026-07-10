@@ -43,7 +43,7 @@ class OnboardingRequest(BaseModel):
     province: Optional[str] = None
     district: Optional[str] = None
     subdistrict: Optional[str] = None
-    language: Optional[str] = Field(default=None, pattern="^(th|en)$")
+    language: Optional[str] = Field(default=None, pattern="^(th|zh|en|ru)$")
     accept_tos: bool = False
     accept_privacy: bool = False
 

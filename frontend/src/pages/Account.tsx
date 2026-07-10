@@ -29,13 +29,13 @@ export default function Account() {
         </Link>
         {user?.role !== 'technician' && !['admin', 'super_admin', 'dispatcher', 'support'].includes(user?.role || '') && (
           <Link to="/tech-apply" className="card flex items-center justify-between">
-            <span>🧰 สมัครเป็นช่าง</span>
+            <span>🧰 {t('apply_technician')}</span>
             <span className="text-gray-300">›</span>
           </Link>
         )}
         {user?.role === 'technician' && (
           <Link to="/tech-apply" className="card flex items-center justify-between">
-            <span>🧰 สถานะช่างของฉัน</span>
+            <span>🧰 {t('my_technician_status')}</span>
             <span className="text-gray-300">›</span>
           </Link>
         )}
