@@ -78,13 +78,19 @@ See [AUTHENTICATION.md](AUTHENTICATION.md).
 | GET | `/jobs/{id}/quotations` | participant/admin |
 | POST | `/quotations/{id}/decision` | customer (`approve`/`reject`/`revision`) |
 
+## Uploads
+| Method | Path | Role | Notes |
+|--------|------|------|-------|
+| POST | `/uploads` | auth | multipart `file`; returns `{url}`. Cloudinary when `CLOUDINARY_URL` set, else local `/media/*` (ephemeral). Images/PDF, max 10 MB. |
+
 ## Technicians
-| Method | Path | Role |
-|--------|------|------|
-| POST | `/technicians/apply` | auth |
-| GET | `/technicians/me` | technician |
-| GET | `/technicians/pending` | admin |
-| POST | `/technicians/{id}/review` | admin (approve/reject → promotes role) |
+| Method | Path | Role | Notes |
+|--------|------|------|-------|
+| POST | `/technicians/apply` | auth | documents (ID front/back, selfie, profile photo), per-category skill/min-fee/emergency, and certificates |
+| GET | `/technicians/me` | technician | |
+| GET | `/technicians/pending` | admin | review queue |
+| GET | `/technicians/{id}` | admin | full detail incl. documents, certificates, categories |
+| POST | `/technicians/{id}/review` | admin | approve/reject → promotes role |
 
 ## Home Health Records
 | Method | Path | Role |

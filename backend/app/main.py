@@ -1,13 +1,17 @@
 """HomeKeeper FastAPI application entrypoint."""
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.api.router import api_router
 from app.config import settings
 from app.core.ratelimit import limiter
+from app.services.storage import LOCAL_DIR
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -42,3 +46,7 @@ def healthcheck():
 
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# Serve locally-stored uploads (fallback when Cloudinary is not configured).
+LOCAL_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=str(LOCAL_DIR)), name="media")

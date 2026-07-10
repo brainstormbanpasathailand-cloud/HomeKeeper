@@ -7,11 +7,16 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user, require_admin
 from app.models.enums import NotificationType, UserRole, VerificationStatus
-from app.models.technician import TechnicianProfile, TechnicianServiceCategory
+from app.models.technician import (
+    TechnicianCertificate,
+    TechnicianProfile,
+    TechnicianServiceCategory,
+)
 from app.models.user import User
 from app.schemas.common import Message
 from app.schemas.records import (
     TechnicianApplyRequest,
+    TechnicianDetailOut,
     TechnicianProfileOut,
     TechnicianReviewDecision,
 )
@@ -19,6 +24,17 @@ from app.services.audit import log_action
 from app.services.notifications import notify
 
 router = APIRouter(prefix="/technicians", tags=["technicians"])
+
+
+def _serialize_detail(db: Session, profile: TechnicianProfile) -> dict:
+    tech_user = db.get(User, profile.user_id)
+    return {
+        **{c.name: getattr(profile, c.name) for c in profile.__table__.columns},
+        "phone": tech_user.phone if tech_user else None,
+        "email": tech_user.email if tech_user else None,
+        "certificates": profile.certificates,
+        "categories": profile.service_categories,
+    }
 
 
 @router.post("/apply", response_model=TechnicianProfileOut, status_code=status.HTTP_201_CREATED)
@@ -33,6 +49,7 @@ def apply_as_technician(
         legal_name=payload.legal_name,
         display_name=payload.display_name or user.display_name,
         national_id_or_passport=payload.national_id_or_passport,
+        date_of_birth=payload.date_of_birth,
         province=payload.province,
         district=payload.district,
         latitude=payload.latitude,
@@ -41,12 +58,48 @@ def apply_as_technician(
         years_of_experience=payload.years_of_experience,
         languages=payload.languages,
         bio=payload.bio,
+        profile_photo=payload.profile_photo,
+        identity_document_front=payload.identity_document_front,
+        identity_document_back=payload.identity_document_back,
+        selfie_with_document=payload.selfie_with_document,
+        phone_verified=user.phone_verified,
+        email_verified=user.email_verified,
         verification_status=VerificationStatus.submitted.value,
     )
     db.add(profile)
     db.flush()
-    for cid in payload.category_ids or []:
-        db.add(TechnicianServiceCategory(technician_id=profile.id, service_category_id=cid))
+
+    # Categories: rich form preferred, simple id list as fallback.
+    if payload.categories:
+        for c in payload.categories:
+            db.add(
+                TechnicianServiceCategory(
+                    technician_id=profile.id,
+                    service_category_id=c.service_category_id,
+                    skill_level=c.skill_level,
+                    min_call_fee=c.min_call_fee,
+                    accepts_emergency=c.accepts_emergency,
+                    accepts_scheduled=c.accepts_scheduled,
+                )
+            )
+    else:
+        for cid in payload.category_ids or []:
+            db.add(TechnicianServiceCategory(technician_id=profile.id, service_category_id=cid))
+
+    for cert in payload.certificates:
+        db.add(
+            TechnicianCertificate(
+                technician_id=profile.id,
+                certificate_type=cert.certificate_type,
+                certificate_number=cert.certificate_number,
+                issuer=cert.issuer,
+                issue_date=cert.issue_date,
+                expiry_date=cert.expiry_date,
+                document_url=cert.document_url,
+                verification_status=VerificationStatus.pending.value,
+            )
+        )
+
     log_action(db, "technician.apply", actor_id=user.id, entity_type="technician_profile", entity_id=profile.id, request=request)
     db.commit()
     db.refresh(profile)
@@ -68,6 +121,15 @@ def pending_technicians(admin: User = Depends(require_admin), db: Session = Depe
         .filter(TechnicianProfile.verification_status.in_([VerificationStatus.submitted.value, VerificationStatus.under_review.value]))
         .all()
     )
+
+
+@router.get("/{profile_id}", response_model=TechnicianDetailOut)
+def technician_detail(profile_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+    """Full profile incl. documents, certificates and categories for review."""
+    profile = db.get(TechnicianProfile, profile_id)
+    if not profile:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Profile not found")
+    return _serialize_detail(db, profile)
 
 
 @router.post("/{profile_id}/review", response_model=TechnicianProfileOut)
