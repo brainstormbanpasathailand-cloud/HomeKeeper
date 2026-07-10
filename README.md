@@ -61,6 +61,7 @@ pip install -r requirements.txt
 cp .env.example .env                 # then edit
 alembic upgrade head
 python -m scripts.seed               # super admin + service categories
+python -m scripts.seed_demo          # (optional) realistic demo data — see below
 uvicorn app.main:app --reload
 
 # Frontend (new terminal)
@@ -74,6 +75,15 @@ API docs live at `http://localhost:8000/docs`.
 
 See **[LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)** for the full setup and
 **[DEPLOYMENT.md](DEPLOYMENT.md)** for deploying to Render.
+
+### Demo data
+
+`python -m scripts.seed_demo` populates the platform as if it were in real use:
+2 customers with properties/assets, 2 approved technicians with skills, and 4
+jobs across statuses — including one fully completed job that flows through the
+real completion logic to auto-generate a Home Health Record + warranty + review.
+It is idempotent and prints the login accounts (all share password
+`Demo123456`). Delete or change these accounts before any real launch.
 
 ## Roles
 
