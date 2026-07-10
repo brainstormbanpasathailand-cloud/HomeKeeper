@@ -70,6 +70,15 @@ export default function JobDetail() {
           <StatusBadge status={job.status} />
         </div>
         {job.problem_description && <p className="mt-2 text-sm text-gray-600">{job.problem_description}</p>}
+        {job.photos && job.photos.length > 0 && (
+          <div className="mt-2 flex gap-2 overflow-x-auto">
+            {job.photos.map((p, i) => (
+              <a key={i} href={p} target="_blank" rel="noreferrer" className="shrink-0">
+                <img src={p} alt="" className="h-20 w-20 rounded-lg object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Technician assignment response */}

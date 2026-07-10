@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useI18n } from '@/i18n'
+import { MultiPhotoUpload } from '@/components/MultiPhotoUpload'
 import type { Property, ServiceCategory } from '@/lib/types'
 
 const URGENCIES = ['emergency', 'today', 'scheduled', 'quote_first', 'project']
@@ -26,12 +27,17 @@ export default function JobCreate() {
   const [urgency, setUrgency] = useState(params.get('urgency') || 'scheduled')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    if (photos.length === 0) {
+      setError(t('at_least_one_photo'))
+      return
+    }
     setBusy(true)
     try {
       const resp = await api.post(
@@ -42,6 +48,7 @@ export default function JobCreate() {
           urgency,
           title,
           problem_description: description,
+          photos,
         },
         { headers: { 'Idempotency-Key': crypto.randomUUID() } },
       )
@@ -96,6 +103,10 @@ export default function JobCreate() {
         <div>
           <label className="label">{t('problem_detail')}</label>
           <textarea className="input" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">{t('photos_label')} <span className="text-red-500">*</span></label>
+          <MultiPhotoUpload value={photos} onChange={setPhotos} max={10} folder="jobs" />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button className="btn-primary w-full" disabled={busy}>

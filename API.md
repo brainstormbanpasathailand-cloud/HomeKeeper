@@ -64,7 +64,7 @@ See [AUTHENTICATION.md](AUTHENTICATION.md).
 ## Jobs
 | Method | Path | Role | Notes |
 |--------|------|------|-------|
-| POST | `/jobs` | customer | supports `Idempotency-Key` |
+| POST | `/jobs` | customer | requires **1–10 `photos`** of the issue; supports `Idempotency-Key` |
 | GET | `/jobs` | auth | scoped by role (customer=own, tech=assigned, admin=all) |
 | GET | `/jobs/{id}` | participant/admin | |
 | POST | `/jobs/{id}/status` | tech/customer/admin | validated against status machine |

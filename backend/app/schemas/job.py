@@ -12,7 +12,8 @@ class JobCreate(BaseModel):
     asset_id: Optional[int] = None
     urgency: str = "scheduled"
     problem_description: Optional[str] = None
-    photos: Optional[List[str]] = None
+    # The customer must attach at least one photo of the issue (up to 10).
+    photos: List[str] = Field(min_length=1, max_length=10)
     videos: Optional[List[str]] = None
     preferred_date: Optional[datetime] = None
     preferred_time_start: Optional[str] = None

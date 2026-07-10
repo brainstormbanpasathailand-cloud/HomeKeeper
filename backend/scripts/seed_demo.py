@@ -135,7 +135,7 @@ def make_technician(db, user: User, admin_id: int, *, lat, lng, radius, exp, rat
 
 
 def make_job(db, *, customer, category_slug, title, problem, urgency, status,
-             property_id=None, asset_id=None, technician_id=None):
+             property_id=None, asset_id=None, technician_id=None, photos=None):
     c = cat(db, category_slug)
     job = JobRequest(
         job_number=generate_job_number(db),
@@ -146,6 +146,7 @@ def make_job(db, *, customer, category_slug, title, problem, urgency, status,
         urgency=urgency,
         title=title,
         problem_description=problem,
+        photos=photos or [f"https://picsum.photos/seed/job-{title}/400"],
         status=JobStatus.requested.value,
         address=customer.province,
         contact_phone=customer.phone,
