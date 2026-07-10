@@ -6,7 +6,7 @@ databases:
   - name: homekeeper-db
     databaseName: homekeeper
     user: homekeeper
-    plan: free
+    plan: basic-256mb
 
 services:
   # ---------- Backend (FastAPI) ----------
