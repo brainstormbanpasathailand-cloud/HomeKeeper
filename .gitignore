@@ -24,3 +24,8 @@ dist-ssr/
 .idea/
 .vscode/
 *.log
+
+# TS/Vite build artifacts
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
