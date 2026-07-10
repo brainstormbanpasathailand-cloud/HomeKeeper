@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useAuth } from '@/auth/AuthContext'
 import { useI18n } from '@/i18n'
+import { FileUploadField } from '@/components/FileUploadField'
 import type { ServiceCategory } from '@/lib/types'
 
 interface TechProfile {
@@ -13,12 +14,23 @@ interface TechProfile {
   verification_status: string
 }
 
+interface CategoryChoice {
+  min_call_fee: string
+  accepts_emergency: boolean
+}
+
+interface CertForm {
+  certificate_type: string
+  issuer: string
+  certificate_number: string
+  document_url: string | null
+}
+
 const STATUS_LABEL: Record<string, string> = {
   submitted: 'ส่งใบสมัครแล้ว กำลังรอแอดมินตรวจสอบ',
   under_review: 'แอดมินกำลังตรวจสอบเอกสาร',
   approved: 'ได้รับการอนุมัติแล้ว 🎉 คุณเป็นช่างแล้ว',
   rejected: 'ใบสมัครไม่ผ่านการอนุมัติ กรุณาติดต่อฝ่ายสนับสนุน',
-  pending: 'ยังไม่ส่งใบสมัคร',
 }
 
 export default function TechnicianApply() {
@@ -27,7 +39,6 @@ export default function TechnicianApply() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
-  // Existing profile (if any) — 404 means "not applied yet".
   const { data: profile, isLoading } = useQuery<TechProfile | null>({
     queryKey: ['tech-profile'],
     queryFn: async () => {
@@ -47,6 +58,8 @@ export default function TechnicianApply() {
   const [form, setForm] = useState({
     legal_name: user?.full_name || '',
     display_name: user?.display_name || '',
+    national_id_or_passport: '',
+    date_of_birth: '',
     phone: user?.phone || '',
     province: '',
     district: '',
@@ -54,7 +67,14 @@ export default function TechnicianApply() {
     service_radius_km: '10',
     bio: '',
   })
-  const [categoryIds, setCategoryIds] = useState<number[]>([])
+  const [docs, setDocs] = useState({
+    profile_photo: null as string | null,
+    identity_document_front: null as string | null,
+    identity_document_back: null as string | null,
+    selfie_with_document: null as string | null,
+  })
+  const [chosen, setChosen] = useState<Record<number, CategoryChoice>>({})
+  const [certs, setCerts] = useState<CertForm[]>([])
   const [error, setError] = useState('')
 
   const apply = useMutation({
@@ -62,13 +82,29 @@ export default function TechnicianApply() {
       api.post('/technicians/apply', {
         legal_name: form.legal_name,
         display_name: form.display_name || null,
+        national_id_or_passport: form.national_id_or_passport || null,
+        date_of_birth: form.date_of_birth || null,
         phone: form.phone || null,
         province: form.province || null,
         district: form.district || null,
         years_of_experience: form.years_of_experience ? Number(form.years_of_experience) : null,
         service_radius_km: form.service_radius_km ? Number(form.service_radius_km) : 10,
         bio: form.bio || null,
-        category_ids: categoryIds,
+        ...docs,
+        categories: Object.entries(chosen).map(([id, c]) => ({
+          service_category_id: Number(id),
+          min_call_fee: c.min_call_fee ? Number(c.min_call_fee) : null,
+          accepts_emergency: c.accepts_emergency,
+          accepts_scheduled: true,
+        })),
+        certificates: certs
+          .filter((c) => c.certificate_type.trim())
+          .map((c) => ({
+            certificate_type: c.certificate_type,
+            issuer: c.issuer || null,
+            certificate_number: c.certificate_number || null,
+            document_url: c.document_url,
+          })),
       }),
     onSuccess: async () => {
       await refreshUser()
@@ -78,11 +114,15 @@ export default function TechnicianApply() {
   })
 
   const toggleCategory = (id: number) =>
-    setCategoryIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+    setChosen((prev) => {
+      const next = { ...prev }
+      if (next[id]) delete next[id]
+      else next[id] = { min_call_fee: '', accepts_emergency: false }
+      return next
+    })
 
   if (isLoading) return <p className="text-gray-400">กำลังโหลด…</p>
 
-  // Already applied → show status instead of the form.
   if (profile) {
     const approved = profile.verification_status === 'approved'
     return (
@@ -98,8 +138,8 @@ export default function TechnicianApply() {
             ไปหน้างานของช่าง
           </button>
         )}
-        {!approved && user?.role === 'technician' && (
-          <button className="btn-outline w-full" onClick={() => refreshUser()}>
+        {!approved && (
+          <button className="btn-outline w-full" onClick={() => qc.invalidateQueries({ queryKey: ['tech-profile'] })}>
             รีเฟรชสถานะ
           </button>
         )}
@@ -110,80 +150,153 @@ export default function TechnicianApply() {
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-bold">สมัครเป็นช่าง</h1>
-      <p className="text-sm text-gray-500">
-        กรอกข้อมูลเพื่อสมัครเป็นช่างผู้ให้บริการ ทีมงานจะตรวจสอบและอนุมัติก่อนคุณจะเริ่มรับงานได้
-      </p>
+      <p className="text-sm text-gray-500">กรอกข้อมูลและแนบเอกสาร ทีมงานจะตรวจสอบก่อนอนุมัติให้รับงาน</p>
 
       <form
-        className="card space-y-3"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault()
           setError('')
-          if (categoryIds.length === 0) {
-            setError('กรุณาเลือกหมวดงานที่รับอย่างน้อย 1 หมวด')
-            return
-          }
+          if (Object.keys(chosen).length === 0) return setError('กรุณาเลือกหมวดงานอย่างน้อย 1 หมวด')
+          if (!docs.identity_document_front) return setError('กรุณาแนบรูปบัตรประชาชน/พาสปอร์ต (ด้านหน้า)')
+          if (!docs.selfie_with_document) return setError('กรุณาแนบรูปถ่ายตัวเองคู่กับเอกสาร')
           apply.mutate()
         }}
       >
-        <div>
-          <label className="label">ชื่อ-นามสกุลตามบัตร *</label>
-          <input className="input" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} required />
-        </div>
-        <div>
-          <label className="label">ชื่อที่แสดง</label>
-          <input className="input" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
-        </div>
-        <div>
-          <label className="label">เบอร์โทรศัพท์</label>
-          <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
+        {/* Personal */}
+        <div className="card space-y-3">
+          <h2 className="text-sm font-bold text-gray-700">ข้อมูลส่วนตัว</h2>
           <div>
-            <label className="label">จังหวัด</label>
-            <input className="input" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
+            <label className="label">ชื่อ-นามสกุลตามบัตร *</label>
+            <input className="input" value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} required />
           </div>
           <div>
-            <label className="label">อำเภอ</label>
-            <input className="input" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
+            <label className="label">ชื่อที่แสดง</label>
+            <input className="input" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">เลขบัตร/พาสปอร์ต</label>
+              <input className="input" value={form.national_id_or_passport} onChange={(e) => setForm({ ...form, national_id_or_passport: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">วันเกิด</label>
+              <input className="input" type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
+            </div>
+          </div>
           <div>
-            <label className="label">ประสบการณ์ (ปี)</label>
-            <input className="input" type="number" min="0" value={form.years_of_experience} onChange={(e) => setForm({ ...form, years_of_experience: e.target.value })} />
+            <label className="label">เบอร์โทรศัพท์</label>
+            <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">จังหวัด</label>
+              <input className="input" value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">อำเภอ</label>
+              <input className="input" value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">ประสบการณ์ (ปี)</label>
+              <input className="input" type="number" min="0" value={form.years_of_experience} onChange={(e) => setForm({ ...form, years_of_experience: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">รัศมีบริการ (กม.)</label>
+              <input className="input" type="number" min="1" value={form.service_radius_km} onChange={(e) => setForm({ ...form, service_radius_km: e.target.value })} />
+            </div>
           </div>
           <div>
-            <label className="label">รัศมีบริการ (กม.)</label>
-            <input className="input" type="number" min="1" value={form.service_radius_km} onChange={(e) => setForm({ ...form, service_radius_km: e.target.value })} />
+            <label className="label">แนะนำตัว</label>
+            <textarea className="input" rows={2} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
           </div>
-        </div>
-        <div>
-          <label className="label">แนะนำตัว</label>
-          <textarea className="input" rows={2} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
         </div>
 
-        <div>
-          <label className="label">หมวดงานที่รับ *</label>
+        {/* Documents */}
+        <div className="card space-y-3">
+          <h2 className="text-sm font-bold text-gray-700">เอกสารยืนยันตัวตน</h2>
+          <FileUploadField label="รูปโปรไฟล์" folder="tech/profile" value={docs.profile_photo} onChange={(url) => setDocs({ ...docs, profile_photo: url })} />
+          <FileUploadField label="บัตรประชาชน/พาสปอร์ต (ด้านหน้า)" required folder="tech/id" value={docs.identity_document_front} onChange={(url) => setDocs({ ...docs, identity_document_front: url })} />
+          <FileUploadField label="บัตรประชาชน (ด้านหลัง)" folder="tech/id" value={docs.identity_document_back} onChange={(url) => setDocs({ ...docs, identity_document_back: url })} />
+          <FileUploadField label="รูปถ่ายตัวเองคู่กับเอกสาร" required folder="tech/selfie" value={docs.selfie_with_document} onChange={(url) => setDocs({ ...docs, selfie_with_document: url })} />
+        </div>
+
+        {/* Categories */}
+        <div className="card space-y-3">
+          <h2 className="text-sm font-bold text-gray-700">หมวดงานที่รับ *</h2>
           <div className="flex flex-wrap gap-2">
             {(categories || []).map((c) => (
               <button
                 type="button"
                 key={c.id}
                 onClick={() => toggleCategory(c.id)}
-                className={`chip border ${
-                  categoryIds.includes(c.id) ? 'border-brand-600 bg-brand-100 text-brand-700' : 'border-gray-200 bg-white text-gray-500'
-                }`}
+                className={`chip border ${chosen[c.id] ? 'border-brand-600 bg-brand-100 text-brand-700' : 'border-gray-200 bg-white text-gray-500'}`}
               >
                 {lang === 'th' ? c.name_th : c.name_en || c.name_th}
               </button>
             ))}
           </div>
+          {Object.keys(chosen).length > 0 && (
+            <div className="space-y-2 pt-2">
+              {Object.keys(chosen).map((idStr) => {
+                const id = Number(idStr)
+                const c = (categories || []).find((x) => x.id === id)
+                return (
+                  <div key={id} className="rounded-xl bg-gray-50 p-2">
+                    <div className="mb-1 text-xs font-medium text-gray-600">{c ? (lang === 'th' ? c.name_th : c.name_en) : id}</div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="input flex-1"
+                        type="number"
+                        min="0"
+                        placeholder="ค่าเรียกขั้นต่ำ (บาท)"
+                        value={chosen[id].min_call_fee}
+                        onChange={(e) => setChosen({ ...chosen, [id]: { ...chosen[id], min_call_fee: e.target.value } })}
+                      />
+                      <label className="flex items-center gap-1 text-xs text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={chosen[id].accepts_emergency}
+                          onChange={(e) => setChosen({ ...chosen, [id]: { ...chosen[id], accepts_emergency: e.target.checked } })}
+                        />
+                        รับด่วน
+                      </label>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Certificates */}
+        <div className="card space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-700">ใบรับรอง/ใบเซอร์ (ถ้ามี)</h2>
+            <button type="button" className="text-xs font-semibold text-brand-700" onClick={() => setCerts([...certs, { certificate_type: '', issuer: '', certificate_number: '', document_url: null }])}>
+              + เพิ่ม
+            </button>
+          </div>
+          {certs.map((cert, i) => (
+            <div key={i} className="space-y-2 rounded-xl bg-gray-50 p-2">
+              <input className="input" placeholder="ประเภทใบรับรอง เช่น ช่างไฟฟ้าภายในอาคาร" value={cert.certificate_type} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_type: e.target.value } : c)))} />
+              <div className="grid grid-cols-2 gap-2">
+                <input className="input" placeholder="ผู้ออก" value={cert.issuer} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, issuer: e.target.value } : c)))} />
+                <input className="input" placeholder="เลขที่" value={cert.certificate_number} onChange={(e) => setCerts(certs.map((c, j) => (j === i ? { ...c, certificate_number: e.target.value } : c)))} />
+              </div>
+              <FileUploadField label="ไฟล์ใบรับรอง" folder="tech/cert" value={cert.document_url} onChange={(url) => setCerts(certs.map((c, j) => (j === i ? { ...c, document_url: url } : c)))} />
+              <button type="button" className="text-xs text-red-600" onClick={() => setCerts(certs.filter((_, j) => j !== i))}>
+                ลบใบรับรองนี้
+              </button>
+            </div>
+          ))}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button className="btn-primary w-full" disabled={apply.isPending}>
-          {t('submit')}
+          {apply.isPending ? 'กำลังส่ง…' : t('submit')}
         </button>
       </form>
     </div>

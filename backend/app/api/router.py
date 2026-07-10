@@ -13,6 +13,7 @@ from app.api.routes import (
     quotations,
     reviews,
     technicians,
+    uploads,
     warranties,
 )
 
@@ -28,4 +29,5 @@ api_router.include_router(health.router)
 api_router.include_router(warranties.router)
 api_router.include_router(reviews.router)
 api_router.include_router(notifications.router)
+api_router.include_router(uploads.router)
 api_router.include_router(admin.router)

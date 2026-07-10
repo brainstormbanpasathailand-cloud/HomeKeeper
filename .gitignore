@@ -29,3 +29,6 @@ dist-ssr/
 *.tsbuildinfo
 frontend/vite.config.js
 frontend/vite.config.d.ts
+
+# Local uploaded files (dev fallback storage)
+backend/uploads/

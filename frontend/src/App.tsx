@@ -20,6 +20,7 @@ import TechnicianApply from '@/pages/TechnicianApply'
 import AdminDashboard from '@/pages/AdminDashboard'
 import AdminDispatch from '@/pages/AdminDispatch'
 import AdminTechnicians from '@/pages/AdminTechnicians'
+import AdminTechnicianDetail from '@/pages/AdminTechnicianDetail'
 
 function RoleHome() {
   const { user } = useAuth()
@@ -83,6 +84,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={['admin', 'super_admin', 'support']}>
               <AdminTechnicians />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/technicians/:id"
+          element={
+            <ProtectedRoute roles={['admin', 'super_admin', 'support']}>
+              <AdminTechnicianDetail />
             </ProtectedRoute>
           }
         />

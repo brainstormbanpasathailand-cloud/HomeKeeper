@@ -38,7 +38,11 @@ from app.models.job import JobAssignment, JobMedia, JobRequest  # noqa: E402
 from app.models.misc import Review  # noqa: E402
 from app.models.property import Asset, Property  # noqa: E402
 from app.models.quotation import Part, Quotation  # noqa: E402
-from app.models.technician import TechnicianProfile, TechnicianServiceCategory  # noqa: E402
+from app.models.technician import (  # noqa: E402
+    TechnicianCertificate,
+    TechnicianProfile,
+    TechnicianServiceCategory,
+)
 from app.models.user import AuthIdentity, User  # noqa: E402
 from app.security import hash_password  # noqa: E402
 from app.services.jobs import change_status, generate_job_number  # noqa: E402
@@ -196,6 +200,45 @@ def main() -> None:
         make_technician(db, lek_u, admin.id, lat=13.77, lng=100.57, radius=12, exp=5, rating=4.6, jobs_done=87,
                         bio="ช่างประปา งานเร็ว สะอาด", category_slugs=["plumber"])
 
+        # A pending applicant (role stays customer) so the admin approval flow
+        # has a real submission to review — with documents and a certificate.
+        applicant_u = make_user(db, email="somsri.apply@demo.homekeeper", name="สมศรี ขอสมัคร",
+                               role=UserRole.customer.value, phone="0865556666",
+                               province="นนทบุรี", district="บางใหญ่")
+        db.flush()
+        pending = TechnicianProfile(
+            user_id=applicant_u.id,
+            legal_name=applicant_u.full_name,
+            display_name=applicant_u.display_name,
+            national_id_or_passport="1102003004005",
+            phone_verified=True,
+            province="นนทบุรี",
+            district="บางใหญ่",
+            latitude=13.85,
+            longitude=100.41,
+            service_radius_km=10,
+            years_of_experience=3,
+            languages=["th"],
+            bio="รับงานแอร์และเครื่องใช้ไฟฟ้า",
+            profile_photo="https://picsum.photos/seed/applicant-profile/200",
+            identity_document_front="https://picsum.photos/seed/applicant-idfront/400",
+            identity_document_back="https://picsum.photos/seed/applicant-idback/400",
+            selfie_with_document="https://picsum.photos/seed/applicant-selfie/400",
+            verification_status=VerificationStatus.submitted.value,
+        )
+        db.add(pending)
+        db.flush()
+        for slug in ["air-conditioner", "appliance-repair"]:
+            c = cat(db, slug)
+            if c:
+                db.add(TechnicianServiceCategory(technician_id=pending.id, service_category_id=c.id,
+                                                 skill_level="intermediate", min_call_fee=400,
+                                                 accepts_emergency=True, accepts_scheduled=True))
+        db.add(TechnicianCertificate(technician_id=pending.id, certificate_type="ช่างเครื่องปรับอากาศ",
+                                     certificate_number="AC-2023-118", issuer="กรมพัฒนาฝีมือแรงงาน",
+                                     document_url="https://picsum.photos/seed/applicant-cert/400",
+                                     verification_status=VerificationStatus.pending.value))
+
         # ---- Properties + assets ----
         house = Property(owner_id=somchai.id, name="บ้านเดี่ยว รามอินทรา", property_type="house",
                          address="99/1 ซ.รามอินทรา 5", province="กรุงเทพมหานคร", district="จตุจักร",
@@ -292,7 +335,8 @@ def main() -> None:
         print("       password for ALL demo accounts: " + DEMO_PASSWORD)
         print("       customers : somchai@demo.homekeeper , nida@demo.homekeeper")
         print("       technicians: chai.tech@demo.homekeeper , lek.tech@demo.homekeeper")
-        print("       admin     : use SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD")
+        print("       pending    : somsri.apply@demo.homekeeper (review in admin → อนุมัติช่าง)")
+        print("       admin      : use SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD")
     finally:
         db.close()
 
